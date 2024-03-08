@@ -1,5 +1,6 @@
-from openai import OpenAI
+from openai import AzureOpenAI
 import os
+from dotenv import load_dotenv
 import time
 import datetime
 import pytz
@@ -11,9 +12,21 @@ import tiktoken
 from itertools import islice
 import requests
 from tenacity import retry, wait_random_exponential, stop_after_attempt
-from openai import OpenAI
 
-client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+from langchain_openai import AzureChatOpenAI
+from langchain.schema import SystemMessage, HumanMessage, AIMessage
+from langchain_community.callbacks import get_openai_callback
+
+
+# from openai import OpenAI
+
+load_dotenv()
+
+client = AzureOpenAI(
+    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+    api_version=os.getenv("OPENAI_API_VERSION"),
+)
 from sklearn import metrics
 
 # Add perplexity API key to the environment variable & load it here.
@@ -31,7 +44,31 @@ def api_call(prompt, deployment_name, temperature, max_tokens, top_p):
     - top_p: top p parameter
     """
     time.sleep(5)  # Change to avoid rate limit
-    if deployment_name in ["gpt-35-turbo", "gpt-4", "gpt-3.5-turbo"]:
+    if deployment_name in ["gpt-35-turbo"]:
+        completion_model = AzureChatOpenAI(
+            deployment_name=deployment_name,
+            max_tokens=int(max_tokens),
+            # model_name=deployment_name,
+            temperature=float(temperature),
+        )
+        message = HumanMessage(content=prompt)
+        with get_openai_callback() as cb:
+            gpt_response = completion_model([message])
+            response = {
+                "completion": gpt_response.content,
+                "completion_tokens": cb.completion_tokens,
+                "prompt_tokens": cb.prompt_tokens,
+                "total_tokens": cb.total_tokens,
+                "cost": cb.total_cost,
+            }
+        # save cost in a new line of "../data/output/costs.txt"
+        with open("../data/output/costs.txt", "a") as f:
+            print(f"{response["cost"]}", file=f)
+        print(f"Cost: {response["cost"]}")
+
+        return response["completion"]
+    if deployment_name in []:
+    # if deployment_name in ["gpt-35-turbo", "gpt-4", "gpt-3.5-turbo"]:
         response = client.chat.completions.create(
             model=deployment_name,
             temperature=float(temperature),
