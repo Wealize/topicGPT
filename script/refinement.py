@@ -122,9 +122,9 @@ def merge_topics(
                                 f"[{node.lvl}] {node.name}" in origs
                                 and f"[{node.lvl}] {node.name}" != f"[{lvl}] {name}"
                             ):
-                                orig_new[
-                                    f"[{node.lvl}] {node.name}:"
-                                ] = f"[{lvl}] {name}:"
+                                orig_new[f"[{node.lvl}] {node.name}:"] = (
+                                    f"[{lvl}] {name}:"
+                                )
                                 if (
                                     f"[{node.lvl}] {node.name}: {node.desc}"
                                     in topic_sent
@@ -235,7 +235,11 @@ def main():
         help="file to update merged topics to",
     )
     parser.add_argument(
-        "--verbose", type=bool, default=False, help="whether to print out results"
+        # "--verbose", type=bool, default=False, help="whether to print out results"
+        "--verbose",
+        type=str,
+        default=False,
+        help="whether to print out results",
     )
     parser.add_argument(
         "--remove", type=bool, default=False, help="option to remove minor topics"
@@ -255,6 +259,9 @@ def main():
 
     args = parser.parse_args()
 
+    # Convert verbose to boolean ----
+    args.verbose = args.verbose.lower() == "true"
+
     # Model configuration ----
     deployment_name, max_tokens, temperature, top_p = (
         args.deployment_name,
@@ -263,7 +270,8 @@ def main():
         args.top_p,
     )
     if deployment_name == "gpt-35-turbo":
-        deployment_name = "gpt-3.5-turbo"
+        # deployment_name = "gpt-3.5-turbo"
+        deployment_name = "gpt-35-turbo"
 
     # Load data ----
     topics_root, topics_node = generate_tree(read_seed(args.topic_file))
@@ -323,7 +331,7 @@ def main():
             updated_responses.append("\n".join(sub_list))
         df["refined_responses"] = updated_responses
         df.to_json(args.updated_file, lines=True, orient="records")
-    else: 
+    else:
         print("No updated/merged topics!")
 
 

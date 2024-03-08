@@ -212,9 +212,16 @@ def main():
         help="file to write topics to",
     )
     parser.add_argument(
-        "--verbose", type=bool, default=False, help="whether to print out results"
+        # "--verbose", type=bool, default=False, help="whether to print out results"
+        "--verbose",
+        type=str,
+        default=False,
+        help="whether to print out results",
     )
     args = parser.parse_args()
+
+    # Convert verbose to boolean ----
+    args.verbose = args.verbose.lower() == "true"
 
     # Model configuration ----
     deployment_name, max_tokens, temperature, top_p = (
@@ -225,7 +232,8 @@ def main():
     )
     context = 4096
     if deployment_name == "gpt-35-turbo":
-        deployment_name = "gpt-3.5-turbo"
+        # deployment_name = "gpt-3.5-turbo"
+        deployment_name = "gpt-35-turbo"
     if deployment_name == "gpt-4":
         context = 8000
     context_len = context - max_tokens
